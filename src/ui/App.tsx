@@ -30,6 +30,8 @@ function App() {
   const cwd = useAppStore((s) => s.cwd);
   const setCwd = useAppStore((s) => s.setCwd);
   const pendingStart = useAppStore((s) => s.pendingStart);
+  const sidebarOpen = useAppStore((s) => s.sidebarOpen);
+  const setSidebarOpen = useAppStore((s) => s.setSidebarOpen);
 
   // Helper function to extract partial message content
   const getPartialMessageContent = (eventMessage: any) => {
@@ -122,12 +124,23 @@ function App() {
         onDeleteSession={handleDeleteSession}
       />
 
-      <main className="flex flex-1 flex-col ml-[280px] bg-surface-cream">
-        <div 
-          className="flex items-center justify-center h-12 border-b border-ink-900/10 bg-surface-cream select-none"
-          style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-        >
-          <span className="text-sm font-medium text-ink-700">{activeSession?.title || "Open Claude Cowork"}</span>
+      <main className={`flex flex-1 flex-col bg-surface-cream transition-all duration-300 ease-in-out ${sidebarOpen ? "ml-[280px]" : "ml-0"}`}>
+        <div className="flex items-center justify-between h-12 border-b border-ink-900/10 bg-surface-cream px-4 select-none">
+          <div className="flex items-center gap-2 flex-1">
+            {!sidebarOpen && (
+              <button
+                className="rounded-lg p-1.5 text-ink-500 hover:bg-ink-900/10 transition-colors"
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Open sidebar"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M13 19l7-7-7-7M6 19l7-7-7-7" />
+                </svg>
+              </button>
+            )}
+            <span className="text-sm font-medium text-ink-700">{activeSession?.title || "Open Claude Cowork"}</span>
+          </div>
+          <div style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} className="flex-1" />
         </div>
 
         <div className="flex-1 overflow-y-auto px-8 pb-40 pt-6">

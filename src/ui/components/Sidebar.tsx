@@ -16,6 +16,8 @@ export function Sidebar({
   const sessions = useAppStore((state) => state.sessions);
   const activeSessionId = useAppStore((state) => state.activeSessionId);
   const setActiveSessionId = useAppStore((state) => state.setActiveSessionId);
+  const sidebarOpen = useAppStore((state) => state.sidebarOpen);
+  const setSidebarOpen = useAppStore((state) => state.setSidebarOpen);
   const [resumeSessionId, setResumeSessionId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const closeTimerRef = useRef<number | null>(null);
@@ -68,11 +70,23 @@ export function Sidebar({
   };
 
   return (
-    <aside className="fixed inset-y-0 left-0 flex h-full w-[280px] flex-col gap-4 border-r border-ink-900/5 bg-[#FAF9F6] px-4 pb-4 pt-12">
-      <div 
-        className="absolute top-0 left-0 right-0 h-12"
-        style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-      />
+    <aside
+      className={`fixed inset-y-0 left-0 flex h-full flex-col gap-4 border-r border-ink-900/5 bg-[#FAF9F6] px-4 pb-4 pt-12 transition-transform duration-300 ease-in-out ${
+        sidebarOpen ? "translate-x-0 w-[280px]" : "-translate-x-full w-[280px]"
+      }`}
+    >
+      <div className="absolute top-0 left-0 right-0 h-12 flex items-center justify-between px-1">
+        <div style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} className="flex-1" />
+        <button
+          className="rounded-lg p-1.5 text-ink-500 hover:bg-ink-900/10 transition-colors"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close sidebar"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
+          </svg>
+        </button>
+      </div>
       <button
         className="w-full rounded-xl border border-ink-900/10 bg-surface px-4 py-2.5 text-sm font-medium text-ink-700 hover:bg-surface-tertiary hover:border-ink-900/20 transition-colors"
         onClick={onNewSession}
