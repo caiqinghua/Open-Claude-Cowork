@@ -5,7 +5,7 @@
 	"type": "module",
 	"main": "dist-electron/main.js",
 	"scripts": {
-		"dev": "pkill -f vite 2>/dev/null; pkill -f electron 2>/dev/null; sleep 1; bun run dev:react & bun run dev:electron",
+		"dev": "concurrently \"bun run dev:react\" \"bun run dev:electron\" --names \"vite,electron\" --kill-others",
 		"dev:react": "vite",
 		"dev:electron": "bun run transpile:electron && cross-env NODE_ENV=development electron .",
 		"build": "tsc -b && vite build",
@@ -46,6 +46,7 @@
 		"electron": "^39.2.7",
 		"electron-builder": "^26.4.0",
 		"electron-rebuild": "^3.2.9",
+		"concurrently": "^9.1.2",
 		"eslint": "^9.39.2",
 		"eslint-plugin-react-hooks": "^7.0.1",
 		"eslint-plugin-react-refresh": "^0.4.26",
