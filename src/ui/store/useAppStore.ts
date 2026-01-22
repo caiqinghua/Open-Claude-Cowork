@@ -390,10 +390,19 @@ export const useAppStore = create<AppState>((set, get) => ({
         const { result } = event.payload;
         if (result.ok) {
           get().setSkillsError(null);
+          // Refresh the skills list after successful installation
+          const cwd = get().cwd;
+          if (cwd) {
+            get().setSkillsLoading(true);
+            window.electron.sendClientEvent({
+              type: "skills.list",
+              payload: { projectDir: cwd }
+            });
+          }
         } else {
           get().setSkillsError(result.stderr || "Failed to install skill");
+          get().setSkillsLoading(false);
         }
-        get().setSkillsLoading(false);
         break;
       }
 
@@ -401,10 +410,19 @@ export const useAppStore = create<AppState>((set, get) => ({
         const { result } = event.payload;
         if (result.ok) {
           get().setSkillsError(null);
+          // Refresh the skills list after successful uninstallation
+          const cwd = get().cwd;
+          if (cwd) {
+            get().setSkillsLoading(true);
+            window.electron.sendClientEvent({
+              type: "skills.list",
+              payload: { projectDir: cwd }
+            });
+          }
         } else {
           get().setSkillsError(result.stderr || "Failed to uninstall skill");
+          get().setSkillsLoading(false);
         }
-        get().setSkillsLoading(false);
         break;
       }
     }
