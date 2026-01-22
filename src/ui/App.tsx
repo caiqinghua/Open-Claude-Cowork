@@ -7,6 +7,7 @@ import { Sidebar } from "./components/Sidebar";
 import { StartSessionModal } from "./components/StartSessionModal";
 import { PromptInput, usePromptActions } from "./components/PromptInput";
 import { MessageCard } from "./components/EventCard";
+import { Skills } from "./components/Skills";
 import MDContent from "./render/markdown";
 
 function App() {
@@ -32,12 +33,20 @@ function App() {
   const pendingStart = useAppStore((s) => s.pendingStart);
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen);
+  const currentView = useAppStore((s) => s.currentView);
+  const setCurrentView = useAppStore((s) => s.setCurrentView);
+  const loadWorkspaces = useAppStore((s) => s.loadWorkspaces);
+
+  // Load workspaces on mount
+  useEffect(() => {
+    loadWorkspaces();
+  }, [loadWorkspaces]);
 
   // Helper function to extract partial message content
-  const getPartialMessageContent = (eventMessage: any) => {
+  const getPartialMessageContent = (eventMessage: { delta: { type: string; [key: string]: unknown } }) => {
     try {
       const realType = eventMessage.delta.type.split("_")[0];
-      return eventMessage.delta[realType];
+      return eventMessage.delta[realType] as string;
     } catch (error) {
       console.error(error);
       return "";
@@ -48,15 +57,15 @@ function App() {
   const handlePartialMessages = useCallback((partialEvent: ServerEvent) => {
     if (partialEvent.type !== "stream.message" || partialEvent.payload.message.type !== "stream_event") return;
 
-    const message = partialEvent.payload.message as any;
+    const message = partialEvent.payload.message as { event: { type: string; delta?: { type?: string; [key: string]: unknown } } };
     if (message.event.type === "content_block_start") {
       partialMessageRef.current = "";
       setPartialMessage(partialMessageRef.current);
       setShowPartialMessage(true);
     }
 
-    if (message.event.type === "content_block_delta") {
-      partialMessageRef.current += getPartialMessageContent(message.event) || "";
+    if (message.event.type === "content_block_delta" && message.event.delta) {
+      partialMessageRef.current += getPartialMessageContent(message.event as { delta: { type: string; [key: string]: unknown } }) || "";
       setPartialMessage(partialMessageRef.current);
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
@@ -86,6 +95,7 @@ function App() {
 
   useEffect(() => {
     if (connected) sendEvent({ type: "session.list" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, sendEvent]);
 
   useEffect(() => {
@@ -138,57 +148,86 @@ function App() {
                 </svg>
               </button>
             )}
-            <span className="text-sm font-medium text-ink-700">{activeSession?.title || "Open Claude Cowork"}</span>
+            <div className="flex items-center gap-1 bg-surface rounded-lg p-1">
+              <button
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  currentView === "chat"
+                    ? "bg-white text-ink-800 shadow-sm"
+                    : "text-ink-500 hover:bg-ink-900/5"
+                }`}
+                onClick={() => setCurrentView("chat")}
+              >
+                Chat
+              </button>
+              <button
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  currentView === "skills"
+                    ? "bg-white text-ink-800 shadow-sm"
+                    : "text-ink-500 hover:bg-ink-900/5"
+                }`}
+                onClick={() => setCurrentView("skills")}
+              >
+                Skills
+              </button>
+            </div>
           </div>
           <div style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} className="flex-1" />
         </div>
 
         <div className="flex-1 overflow-y-auto px-8 pb-40 pt-6">
-          <div className="mx-auto max-w-3xl">
-            {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="text-lg font-medium text-ink-700">No messages yet</div>
-                <p className="mt-2 text-sm text-muted">Start a conversation with Claude Code</p>
-              </div>
-            ) : (
-              messages.map((msg, idx) => (
-                <MessageCard
-                  key={idx}
-                  message={msg}
-                  isLast={idx === messages.length - 1}
-                  isRunning={isRunning}
-                  permissionRequest={permissionRequests[0]}
-                  onPermissionResult={handlePermissionResult}
-                />
-              ))
-            )}
-
-            {/* Partial message display with skeleton loading */}
-            <div className="partial-message">
-              <MDContent text={partialMessage} />
-              {showPartialMessage && (
-                <div className="mt-3 flex flex-col gap-2 px-1">
-                  <div className="relative h-3 w-2/12 overflow-hidden rounded-full bg-ink-900/10">
-                    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-ink-900/30 to-transparent animate-shimmer" />
-                  </div>
-                  <div className="relative h-3 w-full overflow-hidden rounded-full bg-ink-900/10">
-                    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-ink-900/30 to-transparent animate-shimmer" />
-                  </div>
-                  <div className="relative h-3 w-full overflow-hidden rounded-full bg-ink-900/10">
-                    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-ink-900/30 to-transparent animate-shimmer" />
-                  </div>
-                  <div className="relative h-3 w-full overflow-hidden rounded-full bg-ink-900/10">
-                    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-ink-900/30 to-transparent animate-shimmer" />
-                  </div>
-                  <div className="relative h-3 w-4/12 overflow-hidden rounded-full bg-ink-900/10">
-                    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-ink-900/30 to-transparent animate-shimmer" />
-                  </div>
-                </div>
-              )}
+          {currentView === "skills" ? (
+            <div className="mx-auto max-w-3xl">
+              <Skills sendEvent={sendEvent} />
             </div>
+          ) : (
+            <>
+              <div className="mx-auto max-w-3xl">
+                {messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="text-lg font-medium text-ink-700">No messages yet</div>
+                    <p className="mt-2 text-sm text-muted">Start a conversation with Claude Code</p>
+                  </div>
+                ) : (
+                  messages.map((msg, idx) => (
+                    <MessageCard
+                      key={idx}
+                      message={msg}
+                      isLast={idx === messages.length - 1}
+                      isRunning={isRunning}
+                      permissionRequest={permissionRequests[0]}
+                      onPermissionResult={handlePermissionResult}
+                    />
+                  ))
+                )}
 
-            <div ref={messagesEndRef} />
-          </div>
+                {/* Partial message display with skeleton loading */}
+                <div className="partial-message">
+                  <MDContent text={partialMessage} />
+                  {showPartialMessage && (
+                    <div className="mt-3 flex flex-col gap-2 px-1">
+                      <div className="relative h-3 w-2/12 overflow-hidden rounded-full bg-ink-900/10">
+                        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-ink-900/30 to-transparent animate-shimmer" />
+                      </div>
+                      <div className="relative h-3 w-full overflow-hidden rounded-full bg-ink-900/10">
+                        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-ink-900/30 to-transparent animate-shimmer" />
+                      </div>
+                      <div className="relative h-3 w-full overflow-hidden rounded-full bg-ink-900/10">
+                        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-ink-900/30 to-transparent animate-shimmer" />
+                      </div>
+                      <div className="relative h-3 w-full overflow-hidden rounded-full bg-ink-900/10">
+                        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-ink-900/30 to-transparent animate-shimmer" />
+                      </div>
+                      <div className="relative h-3 w-4/12 overflow-hidden rounded-full bg-ink-900/10">
+                        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-ink-900/30 to-transparent animate-shimmer" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div ref={messagesEndRef} />
+              </div>
+            </>
+          )}
         </div>
 
         <PromptInput sendEvent={sendEvent} />

@@ -19,6 +19,19 @@ export type SessionInfo = {
   updatedAt: number;
 };
 
+export type SkillCard = {
+  name: string;
+  path: string;
+  description?: string;
+};
+
+export type ExecResult = {
+  ok: boolean;
+  status: number;
+  stdout: string;
+  stderr: string;
+};
+
 // Server -> Client events
 export type ServerEvent =
   | { type: "stream.message"; payload: { sessionId: string; message: StreamMessage } }
@@ -28,7 +41,10 @@ export type ServerEvent =
   | { type: "session.history"; payload: { sessionId: string; status: SessionStatus; messages: StreamMessage[] } }
   | { type: "session.deleted"; payload: { sessionId: string } }
   | { type: "permission.request"; payload: { sessionId: string; toolUseId: string; toolName: string; input: unknown } }
-  | { type: "runner.error"; payload: { sessionId?: string; message: string } };
+  | { type: "runner.error"; payload: { sessionId?: string; message: string } }
+  | { type: "skills.list"; payload: { skills: SkillCard[] } }
+  | { type: "skills.installed"; payload: { result: ExecResult } }
+  | { type: "skills.uninstalled"; payload: { result: ExecResult } };
 
 // Client -> Server events
 export type ClientEvent =
@@ -38,4 +54,10 @@ export type ClientEvent =
   | { type: "session.delete"; payload: { sessionId: string } }
   | { type: "session.list" }
   | { type: "session.history"; payload: { sessionId: string } }
-  | { type: "permission.response"; payload: { sessionId: string; toolUseId: string; result: PermissionResult } };
+  | { type: "permission.response"; payload: { sessionId: string; toolUseId: string; result: PermissionResult } }
+  | { type: "skills.list"; payload: { projectDir: string } }
+  | { type: "skills.import"; payload: { projectDir: string; sourceDir: string; overwrite?: boolean } }
+  | { type: "skills.install.fromUrl"; payload: { projectDir: string; url: string; overwrite?: boolean } }
+  | { type: "skills.install.template"; payload: { projectDir: string; name: string; content: string; overwrite?: boolean } }
+  | { type: "skills.uninstall"; payload: { projectDir: string; name: string } }
+  | { type: "skills.revealFolder"; payload: { projectDir: string } };

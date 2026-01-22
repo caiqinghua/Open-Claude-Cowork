@@ -32,17 +32,19 @@ app.on("ready", () => {
     });
 
     // Handle client events
-    ipcMain.on("client-event", (_, event: ClientEvent) => {
-        handleClientEvent(event);
+    ipcMain.on("client-event", async (_, event: ClientEvent) => {
+        await handleClientEvent(event);
     });
 
     // Handle session title generation
-    ipcMainHandle("generate-session-title", async (_: any, userInput: string | null) => {
+    ipcMainHandle("generate-session-title", async (_: Electron.IpcMainInvokeEvent, ...args: unknown[]) => {
+        const userInput = args[0] as string | null;
         return await generateSessionTitle(userInput);
     });
 
     // Handle recent cwds request
-    ipcMainHandle("get-recent-cwds", (_: any, limit?: number) => {
+    ipcMainHandle("get-recent-cwds", (_: Electron.IpcMainInvokeEvent, ...args: unknown[]) => {
+        const limit = args[0] as number | undefined;
         const boundedLimit = limit ? Math.min(Math.max(limit, 1), 20) : 8;
         return sessions.listRecentCwds(boundedLimit);
     });

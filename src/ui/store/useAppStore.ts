@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ServerEvent, SessionStatus, StreamMessage } from "../types";
+import type { ServerEvent, SessionStatus, StreamMessage, SkillCard } from "../types";
 
 export type PermissionRequest = {
   toolUseId: string;
@@ -20,6 +20,13 @@ export type SessionView = {
   hydrated: boolean;
 };
 
+export type WorkspaceInfo = {
+  id: string;
+  path: string;
+  name: string;
+  createdAt: number;
+};
+
 interface AppState {
   sessions: Record<string, SessionView>;
   activeSessionId: string | null;
@@ -31,6 +38,13 @@ interface AppState {
   showStartModal: boolean;
   historyRequested: Set<string>;
   sidebarOpen: boolean;
+  skills: SkillCard[];
+  skillsLoading: boolean;
+  skillsError: string | null;
+  currentView: "chat" | "skills";
+  workspaces: WorkspaceInfo[];
+  activeWorkspaceId: string | null;
+  workspaceSelectorOpen: boolean;
 
   setPrompt: (prompt: string) => void;
   setCwd: (cwd: string) => void;
@@ -42,6 +56,17 @@ interface AppState {
   markHistoryRequested: (sessionId: string) => void;
   resolvePermissionRequest: (sessionId: string, toolUseId: string) => void;
   handleServerEvent: (event: ServerEvent) => void;
+  setSkills: (skills: SkillCard[]) => void;
+  setSkillsLoading: (loading: boolean) => void;
+  setSkillsError: (error: string | null) => void;
+  setCurrentView: (view: "chat" | "skills") => void;
+  setWorkspaces: (workspaces: WorkspaceInfo[]) => void;
+  setActiveWorkspaceId: (id: string | null) => void;
+  setWorkspaceSelectorOpen: (open: boolean) => void;
+  addWorkspace: (path: string) => void;
+  removeWorkspace: (id: string) => void;
+  loadWorkspaces: () => void;
+  saveWorkspaces: () => void;
 }
 
 function createSession(id: string): SessionView {
@@ -59,14 +84,119 @@ export const useAppStore = create<AppState>((set, get) => ({
   showStartModal: false,
   historyRequested: new Set(),
   sidebarOpen: true,
+  skills: [],
+  skillsLoading: false,
+  skillsError: null,
+  currentView: "chat",
+  workspaces: [],
+  activeWorkspaceId: null,
+  workspaceSelectorOpen: false,
 
   setPrompt: (prompt) => set({ prompt }),
-  setCwd: (cwd) => set({ cwd }),
+  setCwd: (cwd) => {
+    set({ cwd });
+    get().saveWorkspaces();
+  },
   setPendingStart: (pendingStart) => set({ pendingStart }),
   setGlobalError: (globalError) => set({ globalError }),
   setShowStartModal: (showStartModal) => set({ showStartModal }),
   setActiveSessionId: (id) => set({ activeSessionId: id }),
   setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
+  setSkills: (skills) => set({ skills }),
+  setSkillsLoading: (skillsLoading) => set({ skillsLoading }),
+  setSkillsError: (skillsError) => set({ skillsError }),
+  setCurrentView: (currentView) => set({ currentView }),
+  setWorkspaces: (workspaces) => set({ workspaces }),
+  setActiveWorkspaceId: (id) => {
+    const workspace = get().workspaces.find(w => w.id === id);
+    if (workspace) {
+      set({ activeWorkspaceId: id, cwd: workspace.path });
+    } else {
+      set({ activeWorkspaceId: id });
+    }
+    get().saveWorkspaces();
+  },
+  setWorkspaceSelectorOpen: (workspaceSelectorOpen) => set({ workspaceSelectorOpen }),
+
+  loadWorkspaces: () => {
+    try {
+      const stored = localStorage.getItem("claude-workspaces");
+      if (stored) {
+        const workspaces: WorkspaceInfo[] = JSON.parse(stored);
+        const activeId = localStorage.getItem("claude-active-workspace");
+        set({ workspaces, activeWorkspaceId: activeId });
+
+        if (workspaces.length > 0 && activeId) {
+          const active = workspaces.find(w => w.id === activeId);
+          if (active) {
+            set({ cwd: active.path });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load workspaces:", error);
+    }
+  },
+
+  saveWorkspaces: () => {
+    try {
+      const { workspaces, activeWorkspaceId, cwd } = get();
+      localStorage.setItem("claude-workspaces", JSON.stringify(workspaces));
+      if (activeWorkspaceId) {
+        localStorage.setItem("claude-active-workspace", activeWorkspaceId);
+      }
+
+      if (cwd && workspaces.length > 0) {
+        const current = workspaces.find(w => w.path === cwd);
+        if (current && current.id !== activeWorkspaceId) {
+          set({ activeWorkspaceId: current.id });
+          localStorage.setItem("claude-active-workspace", current.id);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to save workspaces:", error);
+    }
+  },
+
+  addWorkspace: (path) => {
+    const { workspaces, cwd } = get();
+    const existing = workspaces.find(w => w.path === path);
+    if (existing) {
+      set({ activeWorkspaceId: existing.id, cwd: path });
+      get().saveWorkspaces();
+      return;
+    }
+
+    const name = path.split(/[\\/]/).filter(Boolean).pop() || path;
+    const newWorkspace: WorkspaceInfo = {
+      id: `ws-${Date.now()}`,
+      path,
+      name,
+      createdAt: Date.now()
+    };
+
+    const updated = [...workspaces, newWorkspace];
+    set({ workspaces: updated, activeWorkspaceId: newWorkspace.id, cwd: path });
+    get().saveWorkspaces();
+  },
+
+  removeWorkspace: (id) => {
+    const { workspaces, activeWorkspaceId } = get();
+    const updated = workspaces.filter(w => w.id !== id);
+
+    if (id === activeWorkspaceId) {
+      const nextActive = updated[0] || null;
+      set({
+        workspaces: updated,
+        activeWorkspaceId: nextActive?.id || null,
+        cwd: nextActive?.path || ""
+      });
+    } else {
+      set({ workspaces: updated });
+    }
+
+    get().saveWorkspaces();
+  },
 
   markHistoryRequested: (sessionId) => {
     set((state) => {
@@ -248,6 +378,33 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       case "runner.error": {
         set({ globalError: event.payload.message });
+        break;
+      }
+
+      case "skills.list": {
+        set({ skills: event.payload.skills, skillsLoading: false, skillsError: null });
+        break;
+      }
+
+      case "skills.installed": {
+        const { result } = event.payload;
+        if (result.ok) {
+          get().setSkillsError(null);
+        } else {
+          get().setSkillsError(result.stderr || "Failed to install skill");
+        }
+        get().setSkillsLoading(false);
+        break;
+      }
+
+      case "skills.uninstalled": {
+        const { result } = event.payload;
+        if (result.ok) {
+          get().setSkillsError(null);
+        } else {
+          get().setSkillsError(result.stderr || "Failed to uninstall skill");
+        }
+        get().setSkillsLoading(false);
         break;
       }
     }

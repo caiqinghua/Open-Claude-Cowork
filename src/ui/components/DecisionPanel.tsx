@@ -24,9 +24,11 @@ export function DecisionPanel({
   const [selectedOptions, setSelectedOptions] = useState<Record<number, string[]>>({});
   const [otherInputs, setOtherInputs] = useState<Record<number, string>>({});
 
+  // Reset state when request changes
   useEffect(() => {
     setSelectedOptions({});
     setOtherInputs({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request.toolUseId]);
 
   const toggleOption = (qIndex: number, optionLabel: string, multiSelect?: boolean) => {

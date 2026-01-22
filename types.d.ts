@@ -25,10 +25,20 @@ interface Window {
         subscribeStatistics: (callback: (statistics: Statistics) => void) => UnsubscribeFunction;
         getStaticData: () => Promise<StaticData>;
         // Claude Agent IPC APIs
-        sendClientEvent: (event: any) => void;
-        onServerEvent: (callback: (event: any) => void) => UnsubscribeFunction;
+        sendClientEvent: (event: ClientEvent) => void;
+        onServerEvent: (callback: (event: ServerEvent) => void) => UnsubscribeFunction;
         generateSessionTitle: (userInput: string | null) => Promise<string>;
         getRecentCwds: (limit?: number) => Promise<string[]>;
         selectDirectory: () => Promise<string | null>;
     }
+}
+
+type ClientEvent = {
+    type: string;
+    payload?: unknown;
+}
+
+type ServerEvent = {
+    type: string;
+    payload?: unknown;
 }

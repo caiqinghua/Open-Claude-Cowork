@@ -1,7 +1,8 @@
-import { BrowserWindow } from "electron";
+import { BrowserWindow, shell } from "electron";
 import type { ClientEvent, ServerEvent } from "./types.js";
 import { runClaude, type RunnerHandle } from "./libs/runner.js";
 import { SessionStore } from "./libs/session-store.js";
+import * as skills from "./libs/skills.js";
 import { app } from "electron";
 import { join } from "path";
 
@@ -33,7 +34,7 @@ function emit(event: ServerEvent) {
   broadcast(event);
 }
 
-export function handleClientEvent(event: ClientEvent) {
+export async function handleClientEvent(event: ClientEvent) {
   if (event.type === "session.list") {
     emit({
       type: "session.list",
@@ -215,6 +216,143 @@ export function handleClientEvent(event: ClientEvent) {
     const pending = session.pendingPermissions.get(event.payload.toolUseId);
     if (pending) {
       pending.resolve(event.payload.result);
+    }
+    return;
+  }
+
+  if (event.type === "skills.list") {
+    try {
+      const skillList = await skills.listLocalSkills(event.payload.projectDir);
+      emit({
+        type: "skills.list",
+        payload: { skills: skillList }
+      });
+    } catch (error) {
+      emit({
+        type: "runner.error",
+        payload: { message: String(error) }
+      });
+    }
+    return;
+  }
+
+  if (event.type === "skills.import") {
+    try {
+      const result = await skills.importLocalSkill(
+        event.payload.projectDir,
+        event.payload.sourceDir,
+        event.payload.overwrite ?? false
+      );
+      emit({
+        type: "skills.installed",
+        payload: { result }
+      });
+    } catch (error) {
+      emit({
+        type: "skills.installed",
+        payload: {
+          result: {
+            ok: false,
+            status: 1,
+            stdout: "",
+            stderr: String(error)
+          }
+        }
+      });
+    }
+    return;
+  }
+
+  if (event.type === "skills.install.fromUrl") {
+    try {
+      const result = await skills.installSkillFromUrl(
+        event.payload.projectDir,
+        event.payload.url,
+        event.payload.overwrite ?? false
+      );
+      emit({
+        type: "skills.installed",
+        payload: { result }
+      });
+    } catch (error) {
+      emit({
+        type: "skills.installed",
+        payload: {
+          result: {
+            ok: false,
+            status: 1,
+            stdout: "",
+            stderr: String(error)
+          }
+        }
+      });
+    }
+    return;
+  }
+
+  if (event.type === "skills.install.template") {
+    try {
+      const result = await skills.installSkillTemplate(
+        event.payload.projectDir,
+        event.payload.name,
+        event.payload.content,
+        event.payload.overwrite ?? false
+      );
+      emit({
+        type: "skills.installed",
+        payload: { result }
+      });
+    } catch (error) {
+      emit({
+        type: "skills.installed",
+        payload: {
+          result: {
+            ok: false,
+            status: 1,
+            stdout: "",
+            stderr: String(error)
+          }
+        }
+      });
+    }
+    return;
+  }
+
+  if (event.type === "skills.uninstall") {
+    try {
+      const result = await skills.uninstallSkill(
+        event.payload.projectDir,
+        event.payload.name
+      );
+      emit({
+        type: "skills.uninstalled",
+        payload: { result }
+      });
+    } catch (error) {
+      emit({
+        type: "skills.uninstalled",
+        payload: {
+          result: {
+            ok: false,
+            status: 1,
+            stdout: "",
+            stderr: String(error)
+          }
+        }
+      });
+    }
+    return;
+  }
+
+  if (event.type === "skills.revealFolder") {
+    try {
+      const skillRoot = skills.resolveSkillRoot(event.payload.projectDir);
+      await shell.openPath(skillRoot);
+    } catch (error) {
+      emit({
+        type: "runner.error",
+        payload: { message: String(error) }
+      });
     }
     return;
   }

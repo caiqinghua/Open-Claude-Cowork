@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useAppStore } from "../store/useAppStore";
+import { WorkspaceSelector } from "./WorkspaceSelector";
 
 interface SidebarProps {
   connected: boolean;
@@ -41,6 +42,7 @@ export function Sidebar({
       window.clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeSessionId]);
 
   useEffect(() => {
@@ -87,6 +89,9 @@ export function Sidebar({
           </svg>
         </button>
       </div>
+
+      <WorkspaceSelector />
+
       <button
         className="w-full rounded-xl border border-ink-900/10 bg-surface px-4 py-2.5 text-sm font-medium text-ink-700 hover:bg-surface-tertiary hover:border-ink-900/20 transition-colors"
         onClick={onNewSession}
