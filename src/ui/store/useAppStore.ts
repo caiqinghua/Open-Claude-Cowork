@@ -27,6 +27,14 @@ export type WorkspaceInfo = {
   createdAt: number;
 };
 
+export type SkillInstallStats = {
+  [url: string]: {
+    count: number;
+    name: string;
+    lastInstalled: number;
+  };
+};
+
 interface AppState {
   sessions: Record<string, SessionView>;
   activeSessionId: string | null;
@@ -45,6 +53,7 @@ interface AppState {
   workspaces: WorkspaceInfo[];
   activeWorkspaceId: string | null;
   workspaceSelectorOpen: boolean;
+  skillInstallStats: SkillInstallStats;
 
   setPrompt: (prompt: string) => void;
   setCwd: (cwd: string) => void;
@@ -67,6 +76,10 @@ interface AppState {
   removeWorkspace: (id: string) => void;
   loadWorkspaces: () => void;
   saveWorkspaces: () => void;
+  loadSkillStats: () => void;
+  saveSkillStats: () => void;
+  recordSkillInstall: (url: string, name: string) => void;
+  getTopSkillUrls: (limit?: number) => Array<{ url: string; name: string; count: number }>;
 }
 
 function createSession(id: string): SessionView {
@@ -91,6 +104,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   workspaces: [],
   activeWorkspaceId: null,
   workspaceSelectorOpen: false,
+  skillInstallStats: {},
 
   setPrompt: (prompt) => set({ prompt }),
   setCwd: (cwd) => {
@@ -196,6 +210,52 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     get().saveWorkspaces();
+  },
+
+  loadSkillStats: () => {
+    try {
+      const stored = localStorage.getItem("claude-skill-stats");
+      if (stored) {
+        const stats: SkillInstallStats = JSON.parse(stored);
+        set({ skillInstallStats: stats });
+      }
+    } catch (error) {
+      console.error("Failed to load skill stats:", error);
+    }
+  },
+
+  saveSkillStats: () => {
+    try {
+      const { skillInstallStats } = get();
+      localStorage.setItem("claude-skill-stats", JSON.stringify(skillInstallStats));
+    } catch (error) {
+      console.error("Failed to save skill stats:", error);
+    }
+  },
+
+  recordSkillInstall: (url, name) => {
+    const { skillInstallStats } = get();
+    const existing = skillInstallStats[url];
+
+    const updated = {
+      ...skillInstallStats,
+      [url]: {
+        count: (existing?.count || 0) + 1,
+        name: name || existing?.name || url,
+        lastInstalled: Date.now()
+      }
+    };
+
+    set({ skillInstallStats: updated });
+    get().saveSkillStats();
+  },
+
+  getTopSkillUrls: (limit = 5) => {
+    const { skillInstallStats } = get();
+    return Object.entries(skillInstallStats)
+      .map(([url, data]) => ({ url, name: data.name, count: data.count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
   },
 
   markHistoryRequested: (sessionId) => {

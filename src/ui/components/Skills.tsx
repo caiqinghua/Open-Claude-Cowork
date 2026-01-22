@@ -13,10 +13,17 @@ export function Skills({ sendEvent }: SkillsProps) {
   const skillsError = useAppStore((s) => s.skillsError);
   const setSkillsLoading = useAppStore((s) => s.setSkillsLoading);
   const setSkillsError = useAppStore((s) => s.setSkillsError);
+  const recordSkillInstall = useAppStore((s) => s.recordSkillInstall);
+  const getTopSkillUrls = useAppStore((s) => s.getTopSkillUrls);
+  const loadSkillStats = useAppStore((s) => s.loadSkillStats);
 
   const [installUrl, setInstallUrl] = useState("");
   const [showInstallFromUrl, setShowInstallFromUrl] = useState(false);
   const [uninstallTarget, setUninstallTarget] = useState<SkillCard | null>(null);
+
+  useEffect(() => {
+    loadSkillStats();
+  }, [loadSkillStats]);
 
   const refreshSkills = useCallback(() => {
     if (!cwd) return;
@@ -51,7 +58,14 @@ export function Skills({ sendEvent }: SkillsProps) {
   const handleInstallFromUrl = useCallback(() => {
     if (!cwd || !installUrl) return;
 
+    // Extract skill name from URL for stats
+    const skillName = installUrl.split('/').filter(Boolean).pop() || installUrl;
+
     setSkillsLoading(true);
+
+    // Record the install attempt
+    recordSkillInstall(installUrl, skillName);
+
     sendEvent({
       type: "skills.install.fromUrl",
       payload: {
@@ -62,7 +76,7 @@ export function Skills({ sendEvent }: SkillsProps) {
     });
     setInstallUrl("");
     setShowInstallFromUrl(false);
-  }, [cwd, installUrl, sendEvent, setSkillsLoading]);
+  }, [cwd, installUrl, sendEvent, setSkillsLoading, recordSkillInstall]);
 
   const handleRevealFolder = useCallback(() => {
     if (!cwd) return;
@@ -173,6 +187,41 @@ export function Skills({ sendEvent }: SkillsProps) {
           </div>
         )}
       </div>
+
+      {getTopSkillUrls(3).length > 0 && (
+        <div className="rounded-2xl border border-ink-900/10 bg-surface overflow-hidden">
+          <div className="px-5 py-4 border-b border-ink-900/5 bg-surface-tertiary">
+            <div className="text-sm font-semibold text-ink-700">Recommended Skills</div>
+            <div className="text-xs text-muted mt-1">Popular skills from the community</div>
+          </div>
+
+          <div className="divide-y divide-ink-900/5">
+            {getTopSkillUrls(3).map((skill, index) => (
+              <div
+                key={skill.url}
+                className="flex items-center justify-between px-5 py-3 hover:bg-ink-900/5 transition-colors cursor-pointer"
+                onClick={() => {
+                  setInstallUrl(skill.url);
+                  setShowInstallFromUrl(true);
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-accent/10 text-accent text-xs font-semibold">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-ink-800 truncate">{skill.name}</div>
+                    <div className="text-xs text-muted truncate">{skill.url}</div>
+                  </div>
+                  <div className="text-xs text-muted">
+                    {skill.count} install{skill.count !== 1 ? "s" : ""}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <div className="flex items-center justify-between mb-3">

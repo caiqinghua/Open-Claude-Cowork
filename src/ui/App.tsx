@@ -36,11 +36,13 @@ function App() {
   const currentView = useAppStore((s) => s.currentView);
   const setCurrentView = useAppStore((s) => s.setCurrentView);
   const loadWorkspaces = useAppStore((s) => s.loadWorkspaces);
+  const loadSkillStats = useAppStore((s) => s.loadSkillStats);
 
-  // Load workspaces on mount
+  // Load workspaces and skill stats on mount
   useEffect(() => {
     loadWorkspaces();
-  }, [loadWorkspaces]);
+    loadSkillStats();
+  }, [loadWorkspaces, loadSkillStats]);
 
   // Helper function to extract partial message content
   const getPartialMessageContent = (eventMessage: { delta: { type: string; [key: string]: unknown } }) => {
