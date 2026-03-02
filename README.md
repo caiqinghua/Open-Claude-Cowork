@@ -1,3 +1,35 @@
+
+<div align="right">
+  <details>
+    <summary >🌐 Language</summary>
+    <div>
+      <div align="center">
+        <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=en">English</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=zh-CN">简体中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=zh-TW">繁體中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=ja">日本語</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=ko">한국어</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=hi">हिन्दी</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=th">ไทย</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=fr">Français</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=de">Deutsch</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=es">Español</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=it">Italiano</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=ru">Русский</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=pt">Português</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=nl">Nederlands</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=pl">Polski</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=ar">العربية</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=fa">فارسی</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=tr">Türkçe</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=vi">Tiếng Việt</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=id">Bahasa Indonesia</a>
+        | <a href="https://openaitx.github.io/view.html?user=caiqinghua&project=Open-Claude-Cowork&lang=as">অসমীয়া</
+      </div>
+    </div>
+  </details>
+</div>
+
 # Example: Please help me organize my work folder
 
 https://github.com/user-attachments/assets/48743a51-705a-4c66-9fdb-4d7147f8098b
